@@ -3,6 +3,7 @@ const multer = require("multer");
 const File = require("../models/File.js");
 const path = require("path");
 const fs = require("fs/promises");
+const { exit } = require("process");
 
 //multer configuration for filename and destination
 
@@ -46,9 +47,11 @@ const uploadSingleFile = async (req, res) => {
 const deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const fileData = await File.findOne({ fileId });
+    const fileData = await File.findOne({ where: { id: fileId } });
 
-    if (!fileData) res.status(404).json({ message: "File not found !!!!" });
+    if (!fileData) {
+      return res.status(404).json({ message: "File not found !!!!" });
+    }
 
     //delete file from local storage
     const filepath = path.join("./assets", fileData.filename);
@@ -56,13 +59,13 @@ const deleteFile = async (req, res) => {
 
     //delete file data from database
     await fileData.destroy();
-    res.status(201).json({ message: "file deleted successfully!!!" });
+    return res.status(201).json({ message: "file deleted successfully!!!" });
   } catch (error) {
     console.error(error);
     if (error.code === "ENOENT") {
       return res.status(404).json({ message: "File not found" });
     }
-    res.status(500).json({ message: "Internal Server error!!" });
+    return res.status(500).json({ message: "Internal Server error!!" });
   }
 };
 
